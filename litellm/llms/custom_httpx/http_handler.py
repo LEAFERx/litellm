@@ -470,9 +470,16 @@ class AsyncHTTPHandler:
 
     def __del__(self) -> None:
         try:
-            asyncio.get_running_loop().create_task(self.close())
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(self.close())
+            else:
+                loop.run_until_complete(self.close())
         except Exception:
-            pass
+            try:
+                asyncio.run(self.close())
+            except Exception:
+                pass
 
     @staticmethod
     def _create_async_transport(
